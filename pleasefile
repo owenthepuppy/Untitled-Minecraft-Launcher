@@ -1,0 +1,5 @@
+build:
+    cargo build --release
+package:
+    @special run build
+    tar -czf uml-x86_64-linux.tar.gz -C target/release uml
