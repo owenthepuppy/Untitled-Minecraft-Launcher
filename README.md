@@ -1,7 +1,5 @@
 # UML (untitled minecraft launcher)
-This is a VERY work in progress minecraft launcher.
-More info will be available soon.
-Sorry about it.
+This is a custom CLI Minecraft launcher made in Rust.
+More info is at (uml.rs)[https://uml.rs]
 
-## THIS IS ONLY AVAILABLE ON LINUX RIGHT NOW
-and windows/macos/others will probably not be supported, go use prismlauncher (its the better one anyway, for now at least...)
+## THIS IS ONLY AVAILABLE ON LINUX
