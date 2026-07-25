@@ -13,3 +13,7 @@ pub fn is_safe_relative_path(path: &str) -> bool {
         && p.components()
             .all(|c| matches!(c, std::path::Component::Normal(_)))
 }
+pub fn open_path(path: &Path) -> anyhow::Result<()> {
+    std::process::Command::new("xdg-open").arg(path).spawn()?;
+    Ok(())
+}

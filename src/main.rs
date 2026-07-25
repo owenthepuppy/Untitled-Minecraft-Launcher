@@ -1,3 +1,6 @@
+#[cfg(not(target_os = "linux"))]
+compile_error!("UML only supports Linux.");
+
 mod auth; // this is painful, ai helped a bit btw (i try to use ai as little as possible, but this part's just ANNOYING)
 mod download;
 mod fabric;
@@ -11,6 +14,8 @@ use clap::{Parser, Subcommand};
 use launch::run;
 use meta::fetch_version;
 use std::path::{Path, PathBuf};
+
+use crate::util::{is_valid_name, open_path};
 
 /// Untitled Minecraft Launcher
 #[derive(Parser)]
@@ -42,6 +47,8 @@ enum Command {
         #[command(subcommand)]
         action: InstanceCmd,
     },
+    /// Open an instance folder
+    Folder { name: String },
 }
 
 #[derive(Subcommand)]
@@ -107,6 +114,16 @@ fn main() -> anyhow::Result<()> {
 
     let cli = Cli::parse();
     match cli.command {
+        Command::Folder { name } => {
+            if !is_valid_name(&name) {
+                anyhow::bail!("invalid instance name: {name:?}");
+            }
+            let dir = instances_dir.join(&name);
+            if !dir.exists() {
+                anyhow::bail!("no instance named {name}");
+            }
+            open_path(&dir)?;
+        }
         Command::Instances { action } => match action {
             InstanceCmd::New { name, version } => {
                 if !meta::version_exists(&version)? {
