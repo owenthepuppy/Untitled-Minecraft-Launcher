@@ -114,7 +114,7 @@ fn refresh(agent: &Agent, refresh: &str) -> anyhow::Result<(String, String)> {
 }
 fn poll(agent: &Agent, device: &Device) -> anyhow::Result<(String, String)> {
     println!(
-        "Go to {} and enter code: {}",
+        "Go to {} and enter code: {}.",
         device.verification_uri, device.user_code
     );
     loop {

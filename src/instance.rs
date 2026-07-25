@@ -1,9 +1,10 @@
-use anyhow::Ok;
 use serde::{Deserialize, Serialize};
 use std::{
     fs::create_dir_all,
     path::{Path, PathBuf},
 };
+
+use crate::util::is_valid_name;
 #[derive(Serialize, Deserialize)]
 pub struct Instance {
     pub version: String,
@@ -18,8 +19,8 @@ pub struct Loader {
 }
 
 pub fn create(instances_dir: &Path, name: &str, version: &str) -> anyhow::Result<PathBuf> {
-    if name.contains('/') {
-        anyhow::bail!("unusable characters in path.");
+    if !is_valid_name(name) {
+        anyhow::bail!("invalid instance name: {name:?}");
     }
     let directory = instances_dir.join(name);
     if directory.join("instance.json").exists() {
@@ -63,6 +64,9 @@ pub fn list(root: &Path) -> anyhow::Result<Vec<String>> {
     Ok(out)
 }
 pub fn remove(instances_dir: &Path, name: &str, yes: bool) -> anyhow::Result<()> {
+    if !is_valid_name(name) {
+        anyhow::bail!("invalid instance name: {name:?}");
+    }
     let dir = instances_dir.join(&name);
     if !dir.exists() {
         anyhow::bail!("no instance named {name}");
@@ -77,7 +81,25 @@ pub fn remove(instances_dir: &Path, name: &str, yes: bool) -> anyhow::Result<()>
         }
     }
     std::fs::remove_dir_all(&dir)?;
-    println!("Removed {name}.");
+    Ok(())
+}
+pub fn rename(instances_dir: &Path, old_name: &str, new_name: &str) -> anyhow::Result<()> {
+    if !is_valid_name(old_name) {
+        anyhow::bail!("invalid original instance name: {old_name:?}");
+    }
+    if !is_valid_name(new_name) {
+        anyhow::bail!("invalid new instance name: {new_name:?}");
+    }
+    let instance_dir = instances_dir.join(&old_name);
+    let new_dir = instances_dir.join(&new_name);
+    if !instance_dir.exists() {
+        anyhow::bail!("original instance name doesn't exist");
+    }
+    if new_dir.exists() {
+        anyhow::bail!("new instance name already exists");
+    }
+    std::fs::rename(instance_dir, new_dir)?;
+
     Ok(())
 }
 pub fn sanitize(name: &str) -> String {

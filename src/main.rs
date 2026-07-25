@@ -6,13 +6,18 @@ mod launch;
 mod meta;
 mod mrpack;
 mod prism;
-use crate::{launch::run, meta::fetch_version};
+mod util;
 use clap::{Parser, Subcommand};
+use launch::run;
+use meta::fetch_version;
 use std::path::{Path, PathBuf};
 
 /// Untitled Minecraft Launcher
 #[derive(Parser)]
 #[command(name = "uml")]
+#[command(
+    after_help = "For any instance names with spaces, other than the launch command, enclose it in double quotes."
+)]
 struct Cli {
     #[command(subcommand)]
     command: Command,
@@ -46,6 +51,11 @@ enum InstanceCmd {
         name: String,
         #[arg(long)]
         version: String,
+    },
+    /// Rename an instance
+    Rename {
+        current_name: String,
+        new_name: String,
     },
     /// Import a Modrinth modpack
     Import {
@@ -104,6 +114,13 @@ fn main() -> anyhow::Result<()> {
                 }
                 instance::create(&instances_dir, &name, &version)?;
             }
+            InstanceCmd::Rename {
+                current_name,
+                new_name,
+            } => {
+                instance::rename(&instances_dir, &current_name, &new_name)?;
+                println!("Renamed {} to {}.", current_name, new_name);
+            }
             InstanceCmd::Import { pack, name, yes } => {
                 mrpack::import(&pack, &instances_dir, name.as_deref(), yes)?;
             }
@@ -112,6 +129,7 @@ fn main() -> anyhow::Result<()> {
             }
             InstanceCmd::Remove { name, yes } => {
                 instance::remove(&instances_dir, &name, yes)?;
+                println!("Removed {name}.");
             }
             InstanceCmd::List => {
                 for n in instance::list(&instances_dir)? {

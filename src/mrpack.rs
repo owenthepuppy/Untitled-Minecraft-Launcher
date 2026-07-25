@@ -1,7 +1,7 @@
 use crate::{
-    download::download,
-    download::verify_sha512,
+    download::{download, verify_sha512},
     instance::{Loader, create, load, save},
+    util::is_safe_relative_path,
 };
 use indicatif::{ProgressBar, ProgressStyle};
 use serde::Deserialize;
@@ -51,10 +51,9 @@ fn extract_overrides(
         if rel.is_empty() || entry.is_dir() {
             continue;
         }
-        if rel.contains("..") || rel.starts_with('/') {
+        if !is_safe_relative_path(rel) {
             anyhow::bail!("suspicious path in pack: {name}");
         }
-
         let dest = instance_dir.join(rel);
         if let Some(parent) = dest.parent() {
             std::fs::create_dir_all(parent)?;
@@ -146,7 +145,7 @@ pub fn import(
     pb.set_style(ProgressStyle::with_template("{bar:40} {pos}/{len} {msg}").unwrap());
 
     for f in &wanted {
-        if f.path.contains("..") || f.path.starts_with('/') {
+        if !is_safe_relative_path(&f.path) {
             anyhow::bail!("suspicious path in pack: {}", f.path);
         }
         pb.set_message(f.path.clone());
