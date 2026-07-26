@@ -2,6 +2,7 @@
 compile_error!("UML only supports Linux.");
 
 mod auth; // this is painful, ai helped a bit btw (i try to use ai as little as possible, but this part's just ANNOYING)
+mod content;
 mod download;
 mod fabric;
 mod instance;
@@ -31,6 +32,25 @@ struct Cli {
 enum LoaderKind {
     Fabric,
 }
+
+#[derive(Subcommand)]
+enum ModVerb {
+    List,
+    Add {
+        path: PathBuf,
+    },
+    Enable {
+        item: String,
+    },
+    Disable {
+        item: String,
+    },
+    #[command(alias = "remove")]
+    Delete {
+        item: String,
+    },
+}
+
 #[derive(Subcommand)]
 enum Command {
     /// Launch an instance
@@ -42,6 +62,12 @@ enum Command {
         // #[arg(long)]
         // offline: bool,
     },
+    /// Manage things inside instances (mods, worlds, etc...)
+    Instance {
+        name: String,
+        #[command(subcommand)]
+        action: InstanceAction,
+    },
     /// Manage instances
     Instances {
         #[command(subcommand)]
@@ -50,7 +76,13 @@ enum Command {
     /// Open an instance folder
     Folder { name: String },
 }
-
+#[derive(Subcommand)]
+enum InstanceAction {
+    Mods {
+        #[command(subcommand)]
+        verb: ModVerb,
+    },
+}
 #[derive(Subcommand)]
 enum InstanceCmd {
     /// Create a new instance
@@ -225,6 +257,36 @@ fn main() -> anyhow::Result<()> {
                 &version_type,
                 &game_version,
             )?;
+        }
+        Command::Instance { name, action } => {
+            if !is_valid_name(&name) {
+                anyhow::bail!("invalid instance name: {name:?}");
+            }
+            let mods_dir = instances_dir.join(&name).join("mods");
+            match action {
+                InstanceAction::Mods { verb } => match verb {
+                    ModVerb::List => {
+                        let mods = content::list(&mods_dir)?;
+                        if mods.is_empty() {
+                            println!("No mods installed.");
+                        } else {
+                            for m in content::list(&mods_dir)? {
+                                let display = m.name.as_deref().unwrap_or(&m.id);
+                                if m.enabled {
+                                    println!("{display}  ({})", m.id);
+                                } else {
+                                    println!("{display}  ({}) (disabled)", m.id);
+                                }
+                            }
+                            println!("Make sure to specify mods by the ID.");
+                        }
+                    }
+                    ModVerb::Add { path } => content::add(&mods_dir, &path)?,
+                    ModVerb::Enable { item } => content::enable(&mods_dir, &item)?,
+                    ModVerb::Disable { item } => content::disable(&mods_dir, &item)?,
+                    ModVerb::Delete { item } => content::delete(&mods_dir, &item)?,
+                },
+            }
         }
     }
     Ok(())
