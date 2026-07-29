@@ -16,7 +16,6 @@ mod util;
 use clap::{Parser, Subcommand};
 use launch::run;
 use meta::fetch_version;
-use modrinth::{download_mod, get_version};
 use std::path::{Path, PathBuf};
 use util::{is_valid_name, open_path};
 
@@ -52,7 +51,12 @@ enum ModVerb {
         item: String,
     },
 }
-
+#[derive(Subcommand)]
+enum OverlayCmd {
+    /// Apply an overlay
+    Apply { overlay: String, instance: String },
+    // add List, Create, Add, Remove, Unapply, Strip
+}
 #[derive(Subcommand)]
 enum Command {
     /// Launch an instance
@@ -70,6 +74,11 @@ enum Command {
         #[command(subcommand)]
         action: InstanceAction,
     },
+    // Manage overlays
+    Overlays {
+        #[command(subcommand)]
+        cmd: OverlayCmd,
+    },
     /// Manage instances
     Instances {
         #[command(subcommand)]
@@ -80,6 +89,7 @@ enum Command {
 }
 #[derive(Subcommand)]
 enum InstanceAction {
+    /// Manage instance mods
     Mods {
         #[command(subcommand)]
         verb: ModVerb,
@@ -144,8 +154,8 @@ fn data_dir() -> anyhow::Result<PathBuf> {
 fn main() -> anyhow::Result<()> {
     let uml_dir = data_dir()?;
     let instances_dir = uml_dir.join("instances");
+    let overlays_dir = uml_dir.join("overlays");
     let shared_dir = uml_dir.join("shared");
-
     let cli = Cli::parse();
     match cli.command {
         Command::Folder { name } => {
@@ -290,6 +300,26 @@ fn main() -> anyhow::Result<()> {
                 },
             }
         }
+        Command::Overlays { cmd } => match cmd {
+            OverlayCmd::Apply { overlay, instance } => {
+                if !is_valid_name(&instance) {
+                    anyhow::bail!("invalid instance name: {instance:?}");
+                }
+                if !is_valid_name(&overlay) {
+                    anyhow::bail!("invalid overlay name: {overlay:?}");
+                }
+                let mods_dir = instances_dir.join(&instance).join("mods");
+                let (cfg, _) = instance::load(&instances_dir, &instance)?;
+                let loader = cfg
+                    .loader
+                    .as_ref()
+                    .map(|l| l.kind.as_str())
+                    .ok_or_else(|| {
+                        anyhow::anyhow!("instance has no loader, overlays need a modded instance")
+                    })?;
+                overlay::apply(&overlays_dir, &overlay, &mods_dir, loader, &cfg.version)?;
+            }
+        },
     }
     Ok(())
 }

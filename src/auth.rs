@@ -129,7 +129,7 @@ fn poll(agent: &Agent, device: &Device) -> anyhow::Result<(String, String)> {
 
         if let Some(token) = body.access_token {
             let refresh = body.refresh_token.ok_or_else(|| {
-                anyhow::anyhow!("no refresh token — was offline_access in the scope?")
+                anyhow::anyhow!("no refresh token, was offline_access in the scope?")
             })?;
             return Ok((token, refresh));
         }
@@ -176,10 +176,10 @@ fn xsts(agent: &Agent, xbl_token: &str) -> anyhow::Result<XblResponse> {
         anyhow::bail!(
             "{}",
             match e.xerr {
-                2148916233 => "no Xbox profile — sign in at minecraft.net once".into(),
+                2148916233 => "no Xbox profile, sign in at minecraft.net once".into(),
                 2148916235 => "Xbox Live unavailable in this region".into(),
                 2148916237 => "account needs adult verification".into(),
-                2148916238 => "child account — must be added to a Family".into(),
+                2148916238 => "child account, must be added to a Family".into(),
                 other => format!("XSTS failed, XErr {other}"),
             }
         );
