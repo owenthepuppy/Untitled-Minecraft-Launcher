@@ -10,7 +10,9 @@ pub fn download(url: &str, path: &Path) -> anyhow::Result<()> {
     if let Some(parent) = path.parent() {
         create_dir_all(parent)?;
     }
-    let mut res = get(url).call()?;
+    let mut res = get(url)
+        .header("User-Agent", crate::util::USER_AGENT)
+        .call()?;
     let mut file = File::create(path)?;
     copy(&mut res.body_mut().as_reader(), &mut file)?;
     Ok(())

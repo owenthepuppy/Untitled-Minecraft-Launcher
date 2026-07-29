@@ -1,7 +1,7 @@
 use crate::{
     download::{download, verify_sha512},
     instance::{Loader, create, load, save},
-    util::is_safe_relative_path,
+    util::{Hashes, is_safe_relative_path},
 };
 use indicatif::{ProgressBar, ProgressStyle};
 use serde::Deserialize;
@@ -25,10 +25,6 @@ struct PackFile {
     downloads: Vec<String>,
     #[serde(default)]
     env: Option<Env>,
-}
-#[derive(Deserialize)]
-struct Hashes {
-    sha512: String,
 }
 
 #[derive(Deserialize)]
@@ -157,7 +153,10 @@ pub fn import(
                 .ok_or_else(|| anyhow::anyhow!("no download url for {}", f.path))?;
             download(url, &dest)?;
             if !verify_sha512(&dest, &f.hashes.sha512)? {
-                anyhow::bail!("hash mismatch after download: {}", f.path);
+                anyhow::bail!(
+                    "hash mismatch after download: {}. This file is NOT DELETED AND WILL LOAD ON NEXT LAUNCH. DO NOT LAUNCH MINECRAFT, until you are SURE this is safe.",
+                    f.path
+                );
             }
         }
         pb.inc(1);

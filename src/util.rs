@@ -1,5 +1,9 @@
 use std::path::Path;
 
+use serde::Deserialize;
+
+pub const USER_AGENT: &str = concat!("owenthepuppy/uml/", env!("CARGO_PKG_VERSION"));
+
 pub fn is_valid_name(name: &str) -> bool {
     let mut components = Path::new(name).components();
     matches!(
@@ -16,4 +20,8 @@ pub fn is_safe_relative_path(path: &str) -> bool {
 pub fn open_path(path: &Path) -> anyhow::Result<()> {
     std::process::Command::new("xdg-open").arg(path).spawn()?;
     Ok(())
+}
+#[derive(Deserialize, Clone)]
+pub struct Hashes {
+    pub sha512: String,
 }

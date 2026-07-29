@@ -8,15 +8,17 @@ mod fabric;
 mod instance;
 mod launch;
 mod meta;
+mod modrinth;
 mod mrpack;
+mod overlay;
 mod prism;
 mod util;
 use clap::{Parser, Subcommand};
 use launch::run;
 use meta::fetch_version;
+use modrinth::{download_mod, get_version};
 use std::path::{Path, PathBuf};
-
-use crate::util::{is_valid_name, open_path};
+use util::{is_valid_name, open_path};
 
 /// Untitled Minecraft Launcher
 #[derive(Parser)]
